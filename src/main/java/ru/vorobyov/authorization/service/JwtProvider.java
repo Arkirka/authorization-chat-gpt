@@ -68,6 +68,10 @@ public class JwtProvider {
         return validateToken(refreshToken, jwtRefreshSecret);
     }
 
+    public boolean validateExpiredAccessToken(@NonNull String accessToken) {
+        return validateExpiredToken(accessToken, jwtAccessSecret);
+    }
+
     private boolean validateToken(@NonNull String token, @NonNull Key secret) {
         try {
             Jwts.parserBuilder()
@@ -77,6 +81,27 @@ public class JwtProvider {
             return true;
         } catch (ExpiredJwtException expEx) {
             log.error("Token expired", expEx);
+        } catch (UnsupportedJwtException unsEx) {
+            log.error("Unsupported jwt", unsEx);
+        } catch (MalformedJwtException mjEx) {
+            log.error("Malformed jwt", mjEx);
+        } catch (SignatureException sEx) {
+            log.error("Invalid signature", sEx);
+        } catch (Exception e) {
+            log.error("invalid token", e);
+        }
+        return false;
+    }
+
+    private boolean validateExpiredToken(@NonNull String token, @NonNull Key secret) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(secret)
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (ExpiredJwtException expEx) {
+            return true;
         } catch (UnsupportedJwtException unsEx) {
             log.error("Unsupported jwt", unsEx);
         } catch (MalformedJwtException mjEx) {

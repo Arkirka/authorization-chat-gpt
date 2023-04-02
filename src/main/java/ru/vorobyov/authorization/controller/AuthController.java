@@ -13,6 +13,8 @@ import ru.vorobyov.authorization.dto.JwtResponse;
 import ru.vorobyov.authorization.dto.RefreshJwtRequest;
 import ru.vorobyov.authorization.service.AuthService;
 
+import java.net.ConnectException;
+
 @RestController
 @RequestMapping("api/auth")
 @RequiredArgsConstructor
@@ -26,6 +28,8 @@ public class AuthController {
             token = authService.login(authRequest);
         } catch (AuthException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        } catch (ConnectException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(token);
     }
@@ -34,7 +38,7 @@ public class AuthController {
     public ResponseEntity<?> getNewAccessToken(@RequestBody RefreshJwtRequest request) {
         final JwtResponse token;
         try {
-            token = authService.getAccessToken(request.getRefreshToken());
+            token = authService.getAccessToken(request.getRefreshToken(), request.getAccessToken());
         } catch (AuthException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
@@ -48,8 +52,9 @@ public class AuthController {
             token = authService.refresh(request.getRefreshToken());
         } catch (AuthException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        } catch (ConnectException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(token);
     }
-
 }

@@ -1,28 +1,25 @@
 package ru.vorobyov.authorization.service.database;
 
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.vorobyov.authorization.entity.Role;
 import ru.vorobyov.authorization.entity.User;
+import ru.vorobyov.authorization.repository.UserRepository;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 @Service("userService")
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    private final List<User> users;
-
-    public UserServiceImpl() {
-        this.users = List.of(
-                new User("anton", "1234", "Антон", "Иванов", Collections.singleton(Role.USER)),
-                new User("ivan", "12345", "Сергей", "Петров", Collections.singleton(Role.ADMIN))
-        );
-    }
+    private final UserRepository userRepository;
 
     public Optional<User> getByLogin(@NonNull String login) {
-        return users.stream()
-                .filter(user -> login.equals(user.getLogin()))
-                .findFirst();
+        return userRepository.findByLogin(login);
+    }
+
+    @Override
+    public void updateRefreshToken(User user, String refreshToken) {
+        user.setRefreshToken(refreshToken);
+        userRepository.save(user);
     }
 }

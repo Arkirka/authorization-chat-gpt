@@ -16,7 +16,7 @@ public class TestController {
     private final AuthService authService;
 
     @PreAuthorize("hasAuthority('USER')")
-    @GetMapping("hello/user")
+    @GetMapping("test")
     public ResponseEntity<String> helloUser() {
         final JwtAuthentication authInfo = authService.getAuthInfo();
         return ResponseEntity.ok("Hello user " + authInfo.getPrincipal() + "!");

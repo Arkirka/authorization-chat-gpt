@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface UserService {
     Optional<User> getByLogin(String login);
+    void updateRefreshToken(User user, String refreshToken);
 }
