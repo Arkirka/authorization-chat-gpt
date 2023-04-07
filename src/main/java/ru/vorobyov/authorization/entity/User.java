@@ -30,8 +30,9 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column
-    private String refreshToken;
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private RefreshToken refreshToken;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)

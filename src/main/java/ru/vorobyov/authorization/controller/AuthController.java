@@ -8,12 +8,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.vorobyov.authorization.dto.JwtRequest;
-import ru.vorobyov.authorization.dto.JwtResponse;
-import ru.vorobyov.authorization.dto.RefreshJwtRequest;
+import ru.vorobyov.authorization.dto.*;
 import ru.vorobyov.authorization.service.AuthService;
-
-import java.net.ConnectException;
 
 @RestController
 @RequestMapping("api/auth")
@@ -28,10 +24,17 @@ public class AuthController {
             token = authService.login(authRequest);
         } catch (AuthException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
-        } catch (ConnectException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(token);
+    }
+
+    @PostMapping("register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        if (request.getLogin() == null || request.getLogin().isBlank() || request.getPassword() == null || request.getPassword().isBlank())
+            return new ResponseEntity<>("Empty login or password", HttpStatus.BAD_REQUEST);
+        if (!authService.register(request))
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("token")
@@ -46,15 +49,11 @@ public class AuthController {
     }
 
     @PostMapping("refresh")
-    public ResponseEntity<?> getNewRefreshToken(@RequestBody RefreshJwtRequest request) {
-        final JwtResponse token;
-        try {
-            token = authService.refresh(request.getRefreshToken());
-        } catch (AuthException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
-        } catch (ConnectException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return ResponseEntity.ok(token);
+    public ResponseEntity<?> getNewRefreshToken(@RequestBody NewRefreshJwtRequest request) {
+        final JwtResponse token = authService.getNewRefreshToken(request.getRefreshToken());
+
+        return token != null
+                ? ResponseEntity.ok(token)
+                : new ResponseEntity<>("Not refresh valid token", HttpStatus.UNAUTHORIZED);
     }
 }

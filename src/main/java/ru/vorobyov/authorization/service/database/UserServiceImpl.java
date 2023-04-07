@@ -18,8 +18,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateRefreshToken(User user, String refreshToken) {
-        user.setRefreshToken(refreshToken);
-        userRepository.save(user);
+    public Optional<User> findById(Long userId) {
+        return userRepository.findById(userId);
+    }
+
+    @Override
+    public Optional<User> create(User user) {
+        return Optional.of(userRepository.save(user));
     }
 }

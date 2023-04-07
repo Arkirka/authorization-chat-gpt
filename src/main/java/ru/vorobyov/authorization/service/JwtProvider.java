@@ -8,11 +8,13 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.vorobyov.authorization.entity.User;
+import ru.vorobyov.authorization.service.database.RefreshTokenService;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
@@ -24,16 +26,14 @@ import java.util.Date;
 @Slf4j
 @Component
 public class JwtProvider {
-
     private final SecretKey jwtAccessSecret;
-    private final SecretKey jwtRefreshSecret;
+    private final RefreshTokenService refreshTokenService;
 
     public JwtProvider(
             @Value("${jwt.secret.access}") String jwtAccessSecret,
-            @Value("${jwt.secret.refresh}") String jwtRefreshSecret
-    ) {
+            RefreshTokenService refreshTokenService) {
         this.jwtAccessSecret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtAccessSecret));
-        this.jwtRefreshSecret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtRefreshSecret));
+        this.refreshTokenService = refreshTokenService;
     }
 
     public String generateAccessToken(@NonNull User user) {
@@ -49,15 +49,8 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(@NonNull User user) {
-        final LocalDateTime now = LocalDateTime.now();
-        final Instant refreshExpirationInstant = now.plusDays(30).atZone(ZoneId.systemDefault()).toInstant();
-        final Date refreshExpiration = Date.from(refreshExpirationInstant);
-        return Jwts.builder()
-                .setSubject(user.getLogin())
-                .setExpiration(refreshExpiration)
-                .signWith(jwtRefreshSecret)
-                .compact();
+    public String generateRefreshToken(@NonNull Long userId) throws EntityNotFoundException {
+        return refreshTokenService.createRefreshToken(userId).getToken();
     }
 
     public boolean validateAccessToken(@NonNull String accessToken) {
@@ -65,7 +58,7 @@ public class JwtProvider {
     }
 
     public boolean validateRefreshToken(@NonNull String refreshToken) {
-        return validateToken(refreshToken, jwtRefreshSecret);
+        return refreshTokenService.verify(refreshToken);
     }
 
     public boolean validateExpiredAccessToken(@NonNull String accessToken) {
@@ -116,10 +109,6 @@ public class JwtProvider {
 
     public Claims getAccessClaims(@NonNull String token) {
         return getClaims(token, jwtAccessSecret);
-    }
-
-    public Claims getRefreshClaims(@NonNull String token) {
-        return getClaims(token, jwtRefreshSecret);
     }
 
     private Claims getClaims(@NonNull String token, @NonNull Key secret) {

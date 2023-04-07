@@ -15,8 +15,13 @@ import ru.vorobyov.authorization.service.AuthService;
 public class TestController {
     private final AuthService authService;
 
-    @PreAuthorize("hasAuthority('USER')")
     @GetMapping("test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("Hi, u did it!!!!!");
+    }
+
+    @PreAuthorize("hasAuthority('USER')")
+    @GetMapping("hello/user")
     public ResponseEntity<String> helloUser() {
         final JwtAuthentication authInfo = authService.getAuthInfo();
         return ResponseEntity.ok("Hello user " + authInfo.getPrincipal() + "!");
